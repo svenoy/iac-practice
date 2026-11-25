@@ -1,0 +1,20 @@
+# This module creates a RG and then calls the network module to create a VNET and a subnet. 
+# It is used as a base module for parent modules that need a RG and specific resources.
+
+locals {
+  name_prefix = "${var.project}-${var.env}"
+}
+
+resource "azurerm_resource_group" "this" {
+  name     = "rg-${local.name_prefix}"
+  location = var.location
+}
+
+module "network" {
+  source              = "../../modules/network"
+  prefix              = local.name_prefix
+  location            = var.location
+  resource_group_name = azurerm_resource_group.this.name
+  vnet_cidr           = var.vnet_cidr
+  subnet_cidr         = var.subnet_cidr
+}
