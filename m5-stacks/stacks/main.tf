@@ -1,5 +1,8 @@
-# This module creates a RG and then calls the network module to create a VNET and a subnet. 
-# It is used as a base module for parent modules that need a RG and specific resources.
+# This intermediary module groups related components (Resource Group and Network) into one repeatable architecture.
+# It channels input variables down as arguments to child modules and passes child output attributes upward.
+# By keeping environment-specific values out of this layer, the same architecture stays consistent for dev and prod.
+# (Like Tier 1, this is still a child module with no state file of its own.
+# Its outputs.tf forwards selected child attributes back up to the root stack.)
 
 locals {
   name_prefix = "${var.project}-${var.env}"

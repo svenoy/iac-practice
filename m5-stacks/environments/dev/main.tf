@@ -1,7 +1,8 @@
-# This delineates the dev enironment. This top-level module will be the source of truth 
-# for this environment. It passes values to the lower-level modules, which will use them 
-# to create resources. The lower-level modules will return output values here, through the 
-# intermediary module.
+# This thin entry point is where you run Terraform CLI commands and state is stored. It configures
+# one specific instance by feeding concrete values (from dev.tfvars) into the stack module's input arguments.
+# Encapsulation hides the internal VNet and Subnet details, exposing only what the stack chooses to output.
+# (As this root dir owns the terraform.tfstate file, this isolates dev infrastructure from other environments.
+# Only values exported by this layer's outputs.tf appear in CLI output and root state.)
 
 module "app_stack" {
   source      = "../../stacks"

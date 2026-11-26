@@ -1,5 +1,5 @@
-# These child-module variables will be passed values from the parent module. The parent module
-# will pass values to these variables; the child modules will use them to create resources. 
+# These child-module variables will receive values from the parent module. The child 
+# modules will use them to create the resources. 
 
 variable "prefix" {
   type = string
