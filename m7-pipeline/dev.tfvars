@@ -1,0 +1,5 @@
+env         = "dev"
+project     = "ss963"
+location    = "norwayeast"
+vnet_cidr   = "10.10.0.0/16"
+subnet_cidr = "10.10.1.0/24"

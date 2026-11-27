@@ -1,0 +1,100 @@
+name: m7-pipeline
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'm7-pipeline/**'
+      - 'modules/network/**'
+      - '.github/workflows/m7-pipeline.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'm7-pipeline/**'
+      - 'modules/network/**'
+      - '.github/workflows/m7-pipeline.yml'
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: terraform-m7-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    working-directory: m7-pipeline
+
+env:
+  ARM_USE_OIDC:        "true"
+  ARM_CLIENT_ID:       ${{ vars.AZURE_CLIENT_ID }}
+  ARM_TENANT_ID:       ${{ vars.AZURE_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform fmt -check -recursive
+      - run: terraform init -backend=false
+      - run: terraform validate
+
+  plan:
+    needs: build
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Azure/login@v3.1.0
+        with:
+          client-id:       ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id:       ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - uses: hashicorp/setup-terraform@v3
+      - run: |
+          terraform init \
+            -backend-config=backend.hcl \
+            -backend-config="key=practice/m7/dev/network.tfstate"
+      - run: terraform plan -var-file="dev.tfvars" -no-color
+
+  apply-dev:
+    needs: build
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Azure/login@v3.1.0
+        with:
+          client-id:       ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id:       ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - uses: hashicorp/setup-terraform@v3
+      - run: |
+          terraform init \
+            -backend-config=backend.hcl \
+            -backend-config="key=practice/m7/dev/network.tfstate"
+      - run: terraform apply -auto-approve -var-file="dev.tfvars"
+
+  apply-prod:
+    needs: apply-dev
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Azure/login@v3.1.0
+        with:
+          client-id:       ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id:       ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - uses: hashicorp/setup-terraform@v3
+      - run: |
+          terraform init \
+            -backend-config=backend.hcl \
+            -backend-config="key=practice/m7/prod/network.tfstate"
+      - run: terraform apply -auto-approve -var-file="prod.tfvars"
