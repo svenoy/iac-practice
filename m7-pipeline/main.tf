@@ -1,5 +1,5 @@
 locals {
-  name_prefix ="${var.project}-m7-${var.env}"
+  name_prefix = "${var.project}-m7-${var.env}"
 }
 
 resource "azurerm_resource_group" "this" {
